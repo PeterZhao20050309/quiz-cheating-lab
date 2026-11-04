@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Quiz Cheating Lab · Explore Answer Similarity</title>
+  <meta name="description" content="Choose a variation and select a student. Explore matching answers, calculate the reference average, and see what the comparison can tell you.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23152f50'/%3E%3Cpath d='M8 8h6v6H8zm10 0h6v6h-6zM8 18h6v6H8z' fill='white'/%3E%3Cpath d='M18 18h6v6h-6z' fill='%23ffb84d'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="brand"><span aria-hidden="true">▦</span><div><h1>Quiz Cheating Lab</h1><p>How similar are the answers? Let’s count.</p></div></div>
+</header>
+<main>
+  <section class="panel example-panel" aria-label="Choose a variation">
+    <div class="toolbar">
+      <div class="field"><label for="scenario">Variation</label><select id="scenario">
+        <option value="majority">When stuck, copy the mode</option>
+        <option value="independent">Work independently</option>
+        <option value="copy">When stuck, copy one student</option>
+        <option value="high">Most questions are known</option>
+        <option value="blank">Leave the last questions blank</option>
+        <option value="custom">Use your own answers</option>
+      </select></div>
+      <button id="regenerate">New answer set</button><button id="export">Save results</button>
+      <span class="local-note">Calculated locally</span>
+    </div>
+    <p id="scenario-help" class="scenario-help"></p>
+    <p id="control-error" class="error" role="alert"></p>
+  </section>
+
+  <section id="workbench-view" aria-label="Your answer workbench" hidden>
+  <form class="panel workbench-input" id="input-panel" novalidate>
+    <h2>Your own answers</h2>
+    <div class="input-grid">
+      <div>
+        <label for="answers">One student per line: left to right, then front to back</label>
+        <textarea id="answers" rows="9" spellcheck="false" aria-describedby="answer-format" placeholder="Paste the answer sheets here"></textarea>
+        <div id="answer-format" class="answer-format">
+          <p><b>a, b, c, d</b> = correct choice &nbsp; · &nbsp; <b>1, 2, 3, 4</b> = wrong choice A, B, C, D &nbsp; · &nbsp; <b>0</b> = blank</p>
+          <p>For example, choosing A is coded as <b>a</b> if correct and <b>1</b> if wrong.</p>
+          <p>Use the same quiz, question order, and option order for everyone. Each line must have the same number of answers; use 0 for blanks.</p>
+        </div>
+      </div>
+      <div class="workbench-controls">
+        <div class="dimensions"><div class="field"><label for="rows">Rows</label><input id="rows" type="number" min="1" max="6" value="3"></div><div class="field"><label for="cols">Seats per row</label><input id="cols" type="number" min="1" max="6" value="3"></div></div>
+        <p id="seat-total" class="small muted" aria-live="polite">9 students · 9 answer sheets</p>
+        <button id="analyze" type="submit" class="primary">Compare answers</button>
+        <button id="load-example" type="button">Load example</button>
+        <p id="draft-status" class="small muted" role="status"></p>
+        <p id="input-error" class="error" role="alert"></p>
+      </div>
+    </div>
+  </form>
+  </section>
+
+  <div id="analysis-results">
+  <div id="summary" class="summary" aria-live="polite" tabindex="-1"></div>
+  <div class="workspace">
+    <section class="panel seating">
+      <div class="heading"><h2>1. Select a student</h2><span id="seat-count" class="muted small"></span></div>
+      <p class="muted small">(2, 3) means row 2, seat 3.</p>
+      <div class="podium">Front of the room · Row 1</div><div id="seats" class="seats"></div>
+      <div class="legend"><span><i class="selected"></i>Selected student</span><span><i class="visible"></i>Visible neighbors</span><span><i class="reference"></i>Reference students</span></div>
+      <p id="seat-description" class="small"></p>
+      <p class="seat-rule">Assume students can see only the seats immediately to their left, right, and front—not diagonally or behind them.</p>
+    </section>
+    <section class="panel result-panel">
+      <h2>2. Compare with other students</h2>
+      <p class="definition">Find the neighbors’ <a class="term-link" href="#term/mode" data-term="mode" data-term-inline aria-haspopup="dialog">mode</a>, then count how many answers match.</p>
+      <div id="selected-result" aria-live="polite"></div>
+      <details class="compact-details class-ranking"><summary>Class results</summary>
+        <div class="table-scroll"><table><thead><tr><th>Student</th><th><a class="term-link" href="#term/match" data-term="match" aria-haspopup="dialog">Match count</a></th><th><a class="term-link" href="#term/mean" data-term="mean" aria-haspopup="dialog">Reference average</a></th><th><a class="term-link" href="#term/gap" data-term="gap" aria-haspopup="dialog">Difference</a></th></tr></thead><tbody id="consensus"></tbody></table></div>
+      </details>
+    </section>
+  </div>
+
+  <section class="panel" id="question-section">
+    <h2 id="vote-title">3. Question by question</h2><p id="vote-summary" class="muted"></p>
+    <div id="vote-evidence" class="evidence"></div>
+    <details class="compact-details question-details"><summary>Compare the student’s answers with their neighbors’</summary><div id="vote-grid" class="table-scroll question-table"></div></details>
+    <details class="sample-reference compact-details"><summary>How is the reference average calculated?</summary><div id="sample-evidence" class="details-body"></div></details>
+  </section>
+
+  <details class="panel" id="truth-panel"><summary>Reveal the example: who knew, guessed, or copied?</summary><div id="truth" class="details-body"></div></details>
+
+
+  </div>
+
+  <footer>Quiz Cheating Lab · Similar answers are a clue, not proof of copying</footer>
+</main>
+<dialog id="term-dialog" class="term-dialog" aria-labelledby="term-title" aria-describedby="term-short">
+  <div class="term-topbar"><button id="term-back" type="button">← Back</button><span class="term-key-hint">Press Esc to go back</span></div>
+  <div id="term-layout" class="term-layout">
+    <section id="term-reading" class="term-reading">
+      <p id="term-alias" class="term-eyebrow"></p><h2 id="term-title" tabindex="-1"></h2>
+      <p id="term-short" class="term-short"></p>
+      <section class="term-example-card"><h3>Example</h3><p id="term-example"></p></section>
+    </section>
+  </div>
+</dialog>
+<script src="sample-reference.js"></script><script src="engine.js"></script><script src="terms.js"></script><script src="app.js"></script>
+</body>
+</html>
+
+
